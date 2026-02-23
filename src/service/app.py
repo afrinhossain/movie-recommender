@@ -1,27 +1,17 @@
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
+from pathlib import Path
+import joblib
 
 
 app = FastAPI()
 
-movies = pd.read_csv('data/movies.csv')
-movies["movieId"] = movies["movieId"].astype(int)
+ARTIFACTS = Path("artifacts")
 
-
-
-# text prep
-movies["genres"] = movies["genres"].str.replace("|", " ", regex=False)
-movies["text"] = (movies["title"] + " " + movies["genres"]).str.lower()
-
-
-#tf-idf build
-vectorizer = TfidfVectorizer(stop_words='english')
-tfidf_matrix = vectorizer.fit_transform(movies["text"])
-
-similarity_matrix = cosine_similarity(tfidf_matrix)
+movies = pd.read_csv(ARTIFACTS /'movies.csv')
+similarity_matrix = joblib.load(ARTIFACTS / "similarity_matrix.joblib")
+movieid_to_index = joblib.load(ARTIFACTS / "movieid_to_index.joblib")
 
 
 @app.get("/")
@@ -31,36 +21,34 @@ def root():
 @app.get("/similar/{movie_id}")
 def get_similar(movie_id: int, k:int = 5):
 
-    matches = movies.index[movies["movieId"] == movie_id]
-    if len(matches) == 0:
+    if movie_id not in movieid_to_index:
         raise HTTPException(status_code=404, detail=f"movie_id {movie_id} not found")
     
 
-    idx = matches[0]
+    idx = movieid_to_index[movie_id]
 
     scores = list(enumerate(similarity_matrix[idx]))
     scores = sorted(scores, key=lambda x: x[1], reverse=True)
     top_k = scores[1:k+1]
 
     query_movie = {
-        "movieId": int(movies.loc[idx, "movieId"]),
-        "title": movies.loc[idx, "title"],
-        "genres": movies.loc[idx, "genres"],
+        'Queried movie': movies.loc[idx, "title"] + ' (movieId: ' + str(movies.loc[idx, "movieId"]) + ')',
+        'genres': movies.loc[idx, "genres"],
     }
 
     results = []
-    for i, score in top_k:
-        results.append({
-            "movieId": int(movies.loc[i, "movieId"]),
-            "title": movies.loc[i, "title"],
-            "genres": movies.loc[i, "genres"],
-            "similarity_score": round(float(score), 3)
-        })
+    for rank, (i, score) in enumerate(top_k, start=1):
+        title = movies.loc[i, "title"]
+        mid = movies.loc[i, "movieId"]
+        genres = movies.loc[i, "genres"]
+        results.append(
+            f"{rank}. {title} - movieId: ({mid}) with similarity score: {round(float(score),3)}"
+        )
 
     return {
-        "query_movie": query_movie,
-        "top_k": k,
-        "recommendations": results
+        'query_movie': query_movie,
+        'top_k': k,
+        'recommendations': results
     }
 
 
