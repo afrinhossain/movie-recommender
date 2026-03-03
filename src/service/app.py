@@ -3,6 +3,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from pathlib import Path
 import joblib
+from src.service.collab_recommender import CollabRecommender
+
 
 
 app = FastAPI()
@@ -13,6 +15,8 @@ movies = pd.read_csv(ARTIFACTS /'movies.csv')
 similarity_matrix = joblib.load(ARTIFACTS / "similarity_matrix.joblib")
 movieid_to_index = joblib.load(ARTIFACTS / "movieid_to_index.joblib")
 
+rec_collab = CollabRecommender()
+movieid_to_title = dict(zip(movies["movieId"], movies["title"]))
 
 @app.get("/")
 def root():
@@ -60,3 +64,18 @@ def search_movies(name:str):
         raise HTTPException(status_code=404, detail=f"No movies found matching '{name}'")
     
     return matches[["movieId", "title"]].to_dict(orient="records")
+
+
+@app.get("/recommend/collab/{user_id}")
+def recommend_collab(user_id: int, n_recs: int = 10, reverse: bool = True):
+    try:
+        rec_ids = rec_collab.recommend(user_id=user_id, n_recs=n_recs, reverse=reverse)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    
+    for r in rec_ids:
+        mid = r["movieId"]
+        r["title"] = movieid_to_title.get(mid, "Unknown title")
+
+    return {"user_id": user_id, "top_k": n_recs, "recommendations": rec_ids}
