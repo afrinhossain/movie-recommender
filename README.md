@@ -1,114 +1,129 @@
 # Movie Recommendation System
 
-A production-style movie recommendation API built with:
+A production-style movie recommendation API built with **FastAPI**, featuring:
 
 - **Content-Based Filtering** (TF-IDF + Cosine Similarity)
 - **Item-Item Collaborative Filtering**
-- **FastAPI**
-- **Sparse matrix optimization (SciPy)**
+- Sparse matrix optimization (SciPy)
+- Structured JSON API responses
 
 ---
 
 ## Features
 
-###  Content-Based Recommendations
+### 1. Content-Based Recommendations
 
-Recommend movies similar to a given movie using metadata.
+Recommend movies similar to a given movie using metadata features.
 
 **Endpoint**
-
 ```bash
 GET /similar/{movie_id}?k=5
 ```
 
-Example:
-
+**Example**
 ```bash
-/similar/1
+/similar/1?k=5
 ```
 
 Returns:
-- Queried movie
+- Queried movie (movieId, title, genres)
 - Top-k similar movies
 - Cosine similarity scores
 
 ---
 
-###  Collaborative Filtering (Personalized)
+###  2. Search Movies
+
+Search movies by name (case-insensitive substring match).
+
+**Endpoint**
+```bash
+GET /movies?name=star
+```
+
+**Example**
+```bash
+/movies?name=toy
+```
+
+Returns:
+- List of matching movies
+- Each containing `movieId` and `title`
+
+---
+
+### 3. Collaborative Filtering (Personalized)
 
 Recommend movies for a specific user based on rating behavior.
 
 **Endpoint**
-
 ```bash
-GET /recommend/collab/{user_id}?n_recs=10&mode=best|worst
+GET /recommend/collab/{user_id}?n_recs=10&reverse=true
 ```
 
-Examples:
+**Query Parameters**
+- `n_recs` → Number of recommendations (default: 10)
+- `reverse`
+  - `true` → Best recommendations (highest score first)
+  - `false` → Worst recommendations (lowest score first)
 
+**Examples**
 ```bash
 /recommend/collab/8?n_recs=5
-/recommend/collab/8?n_recs=5&mode=worst
+/recommend/collab/8?n_recs=5&reverse=false
 ```
 
-Returns:
-- Query user
-- Mode (best / worst)
-- Structured movie objects
-- `recommendation_score` (ranking signal)
+---
+
+##  How It Works
+
+### Content-Based Filtering
+
+- TF-IDF vectorization of movie metadata
+- Cosine similarity between movie vectors
+- Returns movies with similar textual features
+
+**Pros**
+- No user ratings required
+- Works well for cold start
+
+**Cons**
+- Not personalized
 
 ---
 
-## How It Works
-
-###  Content-Based Filtering
-
-- TF-IDF vectorization on movie metadata  
-- Cosine similarity between movie vectors  
-- Returns movies with similar textual features  
-
-**Strengths**
-- Works without user ratings
-- Good cold-start performance  
-
-**Limitations**
-- Not personalized  
-
----
-
-###  Collaborative Filtering (Item-Item)
+### Collaborative Filtering (Item-Item)
 
 For a given user:
 
 ```
-score(j) = Σ similarity(i, j) × centered_rating_ui
+score(candidate_movie) += similarity(rated_movie, candidate_movie) 
+                           × centered_rating(user, rated_movie)
 ```
 
 Where:
+
 - `similarity(i, j)` = cosine similarity between movies  
-- `centered_rating_ui` = rating − user_mean  
+- `centered_rating = rating − user_mean`
 
-The result is used as a **ranking signal**, not an absolute rating.
+The result is a **ranking signal** (`predicted_score`) used to sort movies.
 
-**Strengths**
-- Personalized recommendations  
-- Learns user taste patterns  
-
-**Limitations**
-- Requires rating history  
+> Higher score = stronger recommendation  
+> Lower score = weaker recommendation  
 
 ---
 
-## Project Structure
+##  Project Structure
 
 ```
-movie-recsys/
+movie-recommender/
 │
 ├── data/
 │   ├── movies.csv
 │   └── ratings.csv
 │
 ├── artifacts/
+│   ├── movies.csv
 │   ├── similarity_matrix.joblib
 │   └── collab/
 │       ├── item_similarity.joblib
@@ -119,11 +134,9 @@ movie-recsys/
 │       └── index_to_movieid.joblib
 │
 ├── src/
-│   ├── service/
-│   │   ├── app.py
-│   │   └── collab_recommender.py
-│   ├── build_content.py
-│   └── build_collab_artifacts.py
+│   └── service/
+│       ├── app.py
+│       └── collab_recommender.py
 │
 └── README.md
 ```
@@ -135,8 +148,8 @@ movie-recsys/
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/movie-recsys.git
-cd movie-recsys
+git clone https://github.com/YOUR_USERNAME/movie-recommender.git
+cd movie-recommender
 ```
 
 Create virtual environment:
@@ -154,7 +167,7 @@ pip install -r requirements.txt
 
 ---
 
-##  Build Artifacts
+## Build Artifacts
 
 Build content-based artifacts:
 
@@ -176,36 +189,29 @@ python src/build_collab_artifacts.py
 python -m uvicorn src.service.app:app --reload
 ```
 
-Open in browser:
+Open Swagger UI:
 
 ```
 http://127.0.0.1:8000/docs
 ```
 
-Swagger UI will appear.
-
 ---
 
-##  Example API Response (Collaborative)
+##  Example Response (Collaborative)
 
 ```json
 {
-  "query_user": { "userId": 8 },
-  "mode": "best",
-  "top_n": 5,
+  "user_id": 8,
+  "top_k": 5,
   "recommendations": [
     {
       "movieId": 1196,
       "title": "Star Wars (1977)",
-      "recommendation_score": 3.8421
+      "predicted_score": 3.8421
     }
   ]
 }
 ```
 
 ---
-
-
-
-- Clean software architecture
 
