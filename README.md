@@ -1,4 +1,4 @@
-# 🎬 Movie Recommendation System
+# Movie Recommendation System
 
 A production-style movie recommendation API built with:
 
@@ -9,9 +9,9 @@ A production-style movie recommendation API built with:
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔎 Content-Based Recommendations
+###  Content-Based Recommendations
 
 Recommend movies similar to a given movie using metadata.
 
@@ -34,7 +34,7 @@ Returns:
 
 ---
 
-### 👤 Collaborative Filtering (Personalized)
+###  Collaborative Filtering (Personalized)
 
 Recommend movies for a specific user based on rating behavior.
 
@@ -59,9 +59,9 @@ Returns:
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
-### 🔹 Content-Based Filtering
+###  Content-Based Filtering
 
 - TF-IDF vectorization on movie metadata  
 - Cosine similarity between movie vectors  
@@ -76,7 +76,7 @@ Returns:
 
 ---
 
-### 🔹 Collaborative Filtering (Item-Item)
+###  Collaborative Filtering (Item-Item)
 
 For a given user:
 
@@ -99,7 +99,7 @@ The result is used as a **ranking signal**, not an absolute rating.
 
 ---
 
-## 🏗 Project Structure
+## Project Structure
 
 ```
 movie-recsys/
@@ -130,7 +130,7 @@ movie-recsys/
 
 ---
 
-## ⚙️ Installation
+##  Installation
 
 Clone the repository:
 
@@ -154,7 +154,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🔨 Build Artifacts
+##  Build Artifacts
 
 Build content-based artifacts:
 
@@ -170,7 +170,7 @@ python src/build_collab_artifacts.py
 
 ---
 
-## ▶️ Run the API
+##  Run the API
 
 ```bash
 python -m uvicorn src.service.app:app --reload
@@ -186,7 +186,7 @@ Swagger UI will appear.
 
 ---
 
-## 📦 Example API Response (Collaborative)
+##  Example API Response (Collaborative)
 
 ```json
 {
@@ -205,22 +205,7 @@ Swagger UI will appear.
 
 ---
 
-## 🚀 Future Improvements
 
-- Hybrid recommender (content + collaborative blend)
-- Evaluation metrics (Precision@K)
-- Similarity shrinkage
-- Docker deployment
-- Frontend UI
 
----
-
-## 👨‍💻 Author
-
-Portfolio project demonstrating:
-
-- Recommender systems
-- Machine learning fundamentals
-- Sparse matrix optimization
-- FastAPI backend development
 - Clean software architecture
+
